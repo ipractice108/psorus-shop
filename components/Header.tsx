@@ -6,9 +6,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center">
-              <span className="text-white text-xl font-bold">🌿</span>
-            </div>
+            <span className="text-3xl">🌿</span>
             <h1 className="text-2xl font-bold text-green-800">Psorus</h1>
           </div>
           <nav className="hidden md:flex space-x-8">
