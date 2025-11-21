@@ -1,0 +1,14 @@
+# Robots.txt для Psorus.com
+# Оптимизировано для Yandex и других поисковых систем
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+User-agent: Yandex
+Allow: /
+Disallow: /api/
+Clean-param: utm_source&utm_medium&utm_campaign
+
+Sitemap: https://psorus.com/sitemap.xml
+Host: https://psorus.com
