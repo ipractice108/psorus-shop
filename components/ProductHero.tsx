@@ -1,8 +1,11 @@
 'use client'
 
 import Image from 'next/image'
+import { useState } from 'react'
 
 export default function ProductHero() {
+  const [imageError, setImageError] = useState(false)
+
   return (
     <section id="product" className="py-20 bg-gradient-to-b from-green-50 to-white">
       <div className="container mx-auto px-4">
@@ -10,11 +13,25 @@ export default function ProductHero() {
           <div className="flex justify-center">
             <div className="relative w-full max-w-md aspect-square bg-white rounded-3xl shadow-2xl p-8 card-hover">
               <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-50 rounded-3xl opacity-50"></div>
-              <div className="relative w-full h-full flex items-center justify-center">
-                {/* Placeholder для изображения продукта */}
-                <div className="w-full h-full bg-gradient-to-br from-green-200 to-green-100 rounded-2xl flex items-center justify-center">
-                  <span className="text-8xl">🌿</span>
-                </div>
+              <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl">
+                {/* Изображение продукта или placeholder */}
+                {!imageError ? (
+                  <img
+                    src="/images/product.jpg"
+                    alt="Нежная кожа - натуральное средство от псориаза"
+                    className="w-full h-full object-cover rounded-2xl"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-green-200 to-green-100 rounded-2xl flex flex-col items-center justify-center p-8 text-center">
+                    <span className="text-8xl mb-4">🌿</span>
+                    <p className="text-sm text-green-700 font-medium">
+                      Добавьте изображение продукта
+                      <br />
+                      в <code className="bg-green-200 px-1 rounded">public/images/product.jpg</code>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
