@@ -35,33 +35,38 @@ export default function OrderForm() {
     setSubmitStatus('idle')
 
     try {
-      console.log('Отправка заказа...', { formData, quantity, totalPrice })
+      const orderData = {
+        ...formData,
+        quantity,
+        totalPrice,
+        date: new Date().toISOString(),
+      }
+
+      console.log('📦 Полные данные заказа:', JSON.stringify(orderData, null, 2))
+      console.log('📝 formData:', formData)
+      console.log('📊 quantity:', quantity)
+      console.log('💰 totalPrice:', totalPrice)
 
       const response = await fetch('/api/order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          quantity,
-          totalPrice,
-          date: new Date().toISOString(),
-        }),
+        body: JSON.stringify(orderData),
       })
 
-      console.log('Ответ от сервера:', response.status, response.ok)
+      console.log('📡 Ответ от сервера:', response.status, response.ok)
 
       const data = await response.json()
-      console.log('Данные ответа:', data)
+      console.log('📨 Данные ответа:', data)
 
       if (response.ok && data.success) {
-        console.log('✅ Заказ успешно отправлен')
+        console.log('✅ Заказ успешно отправлен!')
         setSubmitStatus('success')
         setFormData({ name: '', phone: '', email: '', address: '' })
         setQuantity(1)
       } else {
-        console.error('❌ Ошибка:', data)
+        console.error('❌ Ошибка отправки:', data)
         setSubmitStatus('error')
       }
     } catch (error) {
