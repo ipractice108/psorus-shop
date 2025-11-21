@@ -35,6 +35,8 @@ export default function OrderForm() {
     setSubmitStatus('idle')
 
     try {
+      console.log('Отправка заказа...', { formData, quantity, totalPrice })
+
       const response = await fetch('/api/order', {
         method: 'POST',
         headers: {
@@ -48,11 +50,18 @@ export default function OrderForm() {
         }),
       })
 
-      if (response.ok) {
+      console.log('Ответ от сервера:', response.status, response.ok)
+
+      const data = await response.json()
+      console.log('Данные ответа:', data)
+
+      if (response.ok && data.success) {
+        console.log('✅ Заказ успешно отправлен')
         setSubmitStatus('success')
         setFormData({ name: '', phone: '', email: '', address: '' })
         setQuantity(1)
       } else {
+        console.error('❌ Ошибка:', data)
         setSubmitStatus('error')
       }
     } catch (error) {
