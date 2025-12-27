@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 // Проверка авторизации
 function checkAuth() {
@@ -35,8 +38,16 @@ export async function POST(request: Request) {
     const ext = path.extname(file.name)
     const filename = `product-${timestamp}${ext}`
 
+    // Создаем папку если не существует
+    const productsDir = path.join(process.cwd(), 'public', 'images', 'products')
+    try {
+      await mkdir(productsDir, { recursive: true })
+    } catch (e) {
+      // Папка уже существует
+    }
+
     // Сохраняем в public/images/products/
-    const filepath = path.join(process.cwd(), 'public', 'images', 'products', filename)
+    const filepath = path.join(productsDir, filename)
     await writeFile(filepath, buffer)
 
     // Возвращаем путь к файлу
