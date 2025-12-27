@@ -450,17 +450,32 @@ function ProductForm({
 
         xhr.addEventListener('load', () => {
           if (xhr.status === 200) {
-            const data = JSON.parse(xhr.responseText)
-            setFormData({ ...formData, image: data.url })
-            resolve()
+            try {
+              const data = JSON.parse(xhr.responseText)
+              setFormData({ ...formData, image: data.url })
+              resolve()
+            } catch (e) {
+              console.error('Failed to parse response:', xhr.responseText)
+              setUploadError('Ошибка обработки ответа сервера')
+              reject(new Error('Parse error'))
+            }
           } else {
-            const data = JSON.parse(xhr.responseText)
-            setUploadError(data.error || 'Ошибка загрузки изображения')
-            reject(new Error(data.error || 'Upload failed'))
+            try {
+              const data = JSON.parse(xhr.responseText)
+              const errorMsg = data.error || `Ошибка сервера (${xhr.status})`
+              console.error('Upload failed:', errorMsg, xhr.responseText)
+              setUploadError(errorMsg)
+              reject(new Error(errorMsg))
+            } catch (e) {
+              console.error('Upload failed with unparseable response:', xhr.responseText)
+              setUploadError(`Ошибка загрузки (${xhr.status}): ${xhr.responseText.substring(0, 100)}`)
+              reject(new Error('Upload failed'))
+            }
           }
         })
 
         xhr.addEventListener('error', () => {
+          console.error('Network error during upload')
           setUploadError('Ошибка сети при загрузке файла')
           reject(new Error('Network error'))
         })
