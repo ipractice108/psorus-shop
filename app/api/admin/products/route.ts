@@ -3,6 +3,9 @@ import { cookies } from 'next/headers'
 import fs from 'fs/promises'
 import path from 'path'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 const PRODUCTS_FILE = path.join(process.cwd(), 'data', 'products.json')
 
 // Проверка авторизации

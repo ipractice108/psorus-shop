@@ -24,6 +24,9 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
+  const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+
   // Проверка авторизации при загрузке
   useEffect(() => {
     checkAuth()
@@ -91,6 +94,7 @@ export default function AdminPage() {
 
   const handleSaveProduct = async (product: Partial<Product>) => {
     try {
+      console.log('Saving product:', product)
       const url = '/api/admin/products'
       const method = product.id ? 'PUT' : 'POST'
 
@@ -100,14 +104,30 @@ export default function AdminPage() {
         body: JSON.stringify(product),
       })
 
+      console.log('Save response:', res.status, res.ok)
+      const data = await res.json()
+      console.log('Save data:', data)
+
       if (res.ok) {
         await loadProducts()
         setEditingProduct(null)
         setIsCreating(false)
+
+        // Показываем сообщение об успехе
+        setSuccessMessage(
+          product.id
+            ? '✅ Товар успешно обновлен! Изменения видны на сайте.'
+            : '✅ Товар успешно добавлен! Теперь он отображается на сайте.'
+        )
+        setTimeout(() => setSuccessMessage(''), 5000)
+      } else {
+        setErrorMessage('❌ Ошибка при сохранении товара: ' + (data.error || 'Неизвестная ошибка'))
+        setTimeout(() => setErrorMessage(''), 5000)
       }
     } catch (error) {
       console.error('Error saving product:', error)
-      alert('Ошибка при сохранении товара')
+      setErrorMessage('❌ Ошибка при сохранении товара')
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -121,10 +141,16 @@ export default function AdminPage() {
 
       if (res.ok) {
         await loadProducts()
+        setSuccessMessage('✅ Товар успешно удален!')
+        setTimeout(() => setSuccessMessage(''), 5000)
+      } else {
+        setErrorMessage('❌ Ошибка при удалении товара')
+        setTimeout(() => setErrorMessage(''), 5000)
       }
     } catch (error) {
       console.error('Error deleting product:', error)
-      alert('Ошибка при удалении товара')
+      setErrorMessage('❌ Ошибка при удалении товара')
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -226,6 +252,40 @@ export default function AdminPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Уведомления */}
+        {successMessage && (
+          <div className="mb-6 bg-green-50 border-2 border-green-500 text-green-800 px-6 py-4 rounded-xl shadow-lg flex justify-between items-start">
+            <div>
+              <p className="font-semibold text-lg">{successMessage}</p>
+              <a
+                href="/"
+                target="_blank"
+                className="text-green-600 hover:text-green-700 underline mt-2 inline-block"
+              >
+                Посмотреть на сайте →
+              </a>
+            </div>
+            <button
+              onClick={() => setSuccessMessage('')}
+              className="text-green-600 hover:text-green-800 text-2xl font-bold ml-4"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-6 bg-red-50 border-2 border-red-500 text-red-800 px-6 py-4 rounded-xl shadow-lg flex justify-between items-start">
+            <p className="font-semibold text-lg">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage('')}
+              className="text-red-600 hover:text-red-800 text-2xl font-bold ml-4"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="mb-8">
           <button
             onClick={() => {
