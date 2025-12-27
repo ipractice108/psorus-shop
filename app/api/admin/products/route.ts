@@ -6,7 +6,22 @@ import path from 'path'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const PRODUCTS_FILE = path.join(process.cwd(), 'data', 'products.json')
+// На Vercel используем /tmp так как файловая система read-only
+// ВАЖНО: данные в /tmp сбросятся при каждом деплое
+const PRODUCTS_FILE = path.join('/tmp', 'products.json')
+
+// Начальные данные товара
+const INITIAL_PRODUCTS = [
+  {
+    "id": "1",
+    "name": "Нежная кожа",
+    "description": "Мягкая формула из китайских трав, созданная, чтобы поддержать кожу в комфорте и чистоте. Без гормонов. Без раздражения.",
+    "price": 2990,
+    "image": "/images/product.jpg",
+    "featured": true,
+    "createdAt": "2025-11-21T00:00:00.000Z"
+  }
+]
 
 // Проверка авторизации
 function checkAuth() {
@@ -14,33 +29,27 @@ function checkAuth() {
   return !!session?.value
 }
 
-// Инициализация - создание папки и файла если не существуют
-async function ensureDataDirectory() {
-  const dataDir = path.join(process.cwd(), 'data')
-  try {
-    await fs.mkdir(dataDir, { recursive: true })
-  } catch (e) {
-    // Папка уже существует
-  }
-
+// Инициализация - создание файла если не существует
+async function ensureDataFile() {
   try {
     await fs.access(PRODUCTS_FILE)
   } catch {
-    // Файл не существует, создаем с пустым массивом
-    await fs.writeFile(PRODUCTS_FILE, JSON.stringify([], null, 2))
+    // Файл не существует, создаем с начальными данными
+    console.log('Initializing products file with default data')
+    await fs.writeFile(PRODUCTS_FILE, JSON.stringify(INITIAL_PRODUCTS, null, 2))
   }
 }
 
 // GET - получить все товары
 export async function GET() {
   try {
-    await ensureDataDirectory()
+    await ensureDataFile()
     const data = await fs.readFile(PRODUCTS_FILE, 'utf-8')
     const products = JSON.parse(data)
     return NextResponse.json(products)
   } catch (error) {
     console.error('Error reading products:', error)
-    return NextResponse.json([], { status: 200 })
+    return NextResponse.json(INITIAL_PRODUCTS, { status: 200 })
   }
 }
 
@@ -51,7 +60,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await ensureDataDirectory()
+    await ensureDataFile()
 
     const newProduct = await request.json()
     console.log('Creating product:', newProduct)
@@ -97,7 +106,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await ensureDataDirectory()
+    await ensureDataFile()
 
     const updatedProduct = await request.json()
     console.log('Updating product:', updatedProduct.id)
@@ -133,7 +142,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await ensureDataDirectory()
+    await ensureDataFile()
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

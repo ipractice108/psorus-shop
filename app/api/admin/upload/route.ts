@@ -54,26 +54,28 @@ export async function POST(request: Request) {
     const ext = path.extname(file.name)
     const filename = `product-${timestamp}${ext}`
 
-    // Создаем папку если не существует
-    const productsDir = path.join(process.cwd(), 'public', 'images', 'products')
-    console.log('Creating directory:', productsDir)
+    // На Vercel используем /tmp так как файловая система read-only
+    // ВАЖНО: файлы в /tmp сбросятся при каждом деплое
+    const uploadsDir = path.join('/tmp', 'uploads')
+    console.log('Creating directory:', uploadsDir)
 
     try {
-      await mkdir(productsDir, { recursive: true })
+      await mkdir(uploadsDir, { recursive: true })
       console.log('Directory created/verified')
     } catch (e) {
       console.log('Directory already exists or error:', e)
     }
 
-    // Сохраняем в public/images/products/
-    const filepath = path.join(productsDir, filename)
+    // Сохраняем в /tmp/uploads/
+    const filepath = path.join(uploadsDir, filename)
     console.log('Writing file to:', filepath)
 
     await writeFile(filepath, buffer)
     console.log('File written successfully')
 
-    // Возвращаем путь к файлу
-    const imageUrl = `/images/products/${filename}`
+    // ВАЖНО: На Vercel нужно будет добавить API endpoint для отдачи файлов из /tmp
+    // или использовать Vercel Blob Storage для продакшена
+    const imageUrl = `/api/images/${filename}`
     console.log('Upload successful, returning URL:', imageUrl)
 
     return NextResponse.json({ url: imageUrl })
