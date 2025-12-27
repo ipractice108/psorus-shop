@@ -406,32 +406,77 @@ function ProductForm({
     image: product?.image || '',
   })
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadError, setUploadError] = useState('')
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Проверка размера файла (максимум 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB в байтах
+    if (file.size > maxSize) {
+      setUploadError(`Файл слишком большой! Максимум 5 МБ. Ваш файл: ${(file.size / 1024 / 1024).toFixed(2)} МБ`)
+      setTimeout(() => setUploadError(''), 5000)
+      return
+    }
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Можно загружать только изображения (JPG, PNG, etc.)')
+      setTimeout(() => setUploadError(''), 5000)
+      return
+    }
+
     setUploading(true)
+    setUploadProgress(0)
+    setUploadError('')
+
     const formDataObj = new FormData()
     formDataObj.append('file', file)
 
     try {
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formDataObj,
-      })
+      // Используем XMLHttpRequest для отслеживания прогресса
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
 
-      const data = await res.json()
-      if (res.ok) {
-        setFormData({ ...formData, image: data.url })
-      } else {
-        alert('Ошибка загрузки изображения')
-      }
+        // Отслеживание прогресса загрузки
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100)
+            setUploadProgress(percentComplete)
+          }
+        })
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText)
+            setFormData({ ...formData, image: data.url })
+            resolve()
+          } else {
+            const data = JSON.parse(xhr.responseText)
+            setUploadError(data.error || 'Ошибка загрузки изображения')
+            reject(new Error(data.error || 'Upload failed'))
+          }
+        })
+
+        xhr.addEventListener('error', () => {
+          setUploadError('Ошибка сети при загрузке файла')
+          reject(new Error('Network error'))
+        })
+
+        xhr.open('POST', '/api/admin/upload')
+        xhr.send(formDataObj)
+      })
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Ошибка загрузки')
+      if (!uploadError) {
+        setUploadError('Не удалось загрузить изображение')
+      }
+      setTimeout(() => setUploadError(''), 5000)
     } finally {
       setUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -494,14 +539,42 @@ function ProductForm({
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Фотография товара
           </label>
+          <p className="text-xs text-gray-500 mb-3">
+            Максимальный размер файла: 5 МБ. Форматы: JPG, PNG, WEBP
+          </p>
 
-          {formData.image && (
+          {formData.image && !uploading && (
             <div className="mb-4">
               <img
                 src={formData.image}
                 alt="Preview"
                 className="w-48 h-48 object-cover rounded-xl"
               />
+            </div>
+          )}
+
+          {/* Ошибка загрузки */}
+          {uploadError && (
+            <div className="mb-4 bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 rounded-xl">
+              <p className="font-semibold">⚠️ {uploadError}</p>
+            </div>
+          )}
+
+          {/* Прогресс-бар загрузки */}
+          {uploading && (
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-semibold text-gray-700">Загрузка изображения...</span>
+                <span className="text-sm font-bold text-green-600">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                >
+                  <div className="h-full w-full animate-pulse bg-white/20"></div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -520,10 +593,10 @@ function ProductForm({
                 uploading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {uploading ? 'Загрузка...' : formData.image ? 'Изменить фото' : 'Добавить фото'}
+              {uploading ? `Загрузка ${uploadProgress}%` : formData.image ? 'Изменить фото' : 'Добавить фото'}
             </label>
 
-            {formData.image && (
+            {formData.image && !uploading && (
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, image: '' })}

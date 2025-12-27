@@ -14,7 +14,7 @@ function checkAuth() {
 
 export async function POST(request: Request) {
   if (!checkAuth()) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 })
   }
 
   try {
@@ -22,12 +22,20 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+      return NextResponse.json({ error: 'Файл не выбран' }, { status: 400 })
     }
 
     // Проверка типа файла
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
+      return NextResponse.json({ error: 'Можно загружать только изображения' }, { status: 400 })
+    }
+
+    // Проверка размера (5MB)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      return NextResponse.json({
+        error: `Файл слишком большой! Максимум 5 МБ. Ваш файл: ${(file.size / 1024 / 1024).toFixed(2)} МБ`
+      }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
@@ -57,7 +65,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { error: 'Ошибка при загрузке файла на сервер' },
       { status: 500 }
     )
   }
